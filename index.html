@@ -15,9 +15,6 @@
     <meta name="theme-color" content="#07060a">
 </head>
 <body>
-    <!-- 🌈 BARRA RGB ANIMADA - Coloque isto logo após a tag <body> -->
-<div class="rgb-bar"></div>
-
     <!-- Barra de Progresso -->
     <div class="progress-bar" id="progressBar"></div>
 
@@ -285,8 +282,66 @@
                         <p class="section-subtitle">Todos os meus projetos conectados</p>
                     </div>
                     
-                    <div class="global-network" id="globalNetwork">
-                        <!-- Rede será carregada via JavaScript -->
+                    <div class="network-grid">
+                        <div class="network-card">
+                            <div class="network-icon">🤖</div>
+                            <h3>Elliot IA Project</h3>
+                            <p>Projeto principal da IA Elliot</p>
+                            <a href="https://jonathasfelipe.github.io/Eliiot-IA-project" target="_blank" class="network-link">Acessar</a>
+                        </div>
+                        
+                        <div class="network-card">
+                            <div class="network-icon">🏠</div>
+                            <h3>Site Principal</h3>
+                            <p>Página inicial do Elliot</p>
+                            <a href="https://jonathasfelipe.github.io/Elliot/index.html" target="_blank" class="network-link">Acessar</a>
+                        </div>
+                        
+                        <div class="network-card">
+                            <div class="network-icon">👶</div>
+                            <h3>Para Crianças</h3>
+                            <p>Conteúdo educativo infantil</p>
+                            <a href="https://jonathasfelipe.github.io/Elliot/criancas.html" target="_blank" class="network-link">Acessar</a>
+                        </div>
+                        
+                        <div class="network-card">
+                            <div class="network-icon">🎌</div>
+                            <h3>Animes</h3>
+                            <p>Mundo dos animes e cultura</p>
+                            <a href="https://jonathasfelipe.github.io/Elliot/animes.html" target="_blank" class="network-link">Acessar</a>
+                        </div>
+                        
+                        <div class="network-card">
+                            <div class="network-icon">💻</div>
+                            <h3>Tecnologia</h3>
+                            <p>Artigos e tutoriais tech</p>
+                            <a href="https://jonathasfelipe.github.io/Elliot/tecnologia.html" target="_blank" class="network-link">Acessar</a>
+                        </div>
+                        
+                        <div class="network-card">
+                            <div class="network-icon">⚡</div>
+                            <h3>GitHub</h3>
+                            <p>Repositórios e códigos</p>
+                            <a href="https://github.com/jonathasfelipe" target="_blank" class="network-link">Acessar</a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 💬 COMENTÁRIOS PÚBLICOS -->
+                <section id="comentarios" class="dev-section">
+                    <div class="section-header">
+                        <h2>💬 Comentários Públicos</h2>
+                        <p class="section-subtitle">Compartilhe seus pensamentos</p>
+                    </div>
+                    
+                    <div class="comments-container">
+                        <form id="commentForm" class="comment-form">
+                            <textarea id="commentInput" placeholder="Digite seu comentário público..." required></textarea>
+                            <button type="submit">Enviar Comentário</button>
+                        </form>
+                        <div id="commentsList" class="comments-list">
+                            <!-- Comentários serão carregados aqui -->
+                        </div>
                     </div>
                 </section>
 
@@ -329,13 +384,6 @@
                 <div class="dev-panel">
                     <h3>🛠️ Painel de Controle</h3>
                     
-                    <div class="dev-controls">
-                        <button id="toggleAnimations" class="dev-btn">🎭 Animações</button>
-                        <button id="toggleDebug" class="dev-btn">🐛 Debug</button>
-                        <button id="exportData" class="dev-btn">💾 Exportar</button>
-                        <button id="resetAll" class="dev-btn">🔄 Resetar</button>
-                    </div>
-                    
                     <div class="system-stats">
                         <h4>📊 Estatísticas do Sistema</h4>
                         <div class="stat-item">
@@ -354,9 +402,9 @@
 
                     <div class="quick-actions">
                         <h4>⚡ Ações Rápidas</h4>
-                        <button class="action-btn" onclick="window.elliotDev.suggestIdea()">💡 Sugerir Ideia</button>
-                        <button class="action-btn" onclick="window.elliotDev.feedback()">📝 Feedback</button>
-                        <button class="action-btn" onclick="window.elliotNetwork.showProjectManager()">🌐 Gerenciar Rede</button>
+                        <button class="action-btn" onclick="showNotification('💡 Ideia registrada! Elliot analisará sua sugestão.', 'success')">💡 Sugerir Ideia</button>
+                        <button class="action-btn" onclick="showNotification('📝 Feedback enviado! Obrigado pela contribuição.', 'info')">📝 Feedback</button>
+                        <button class="action-btn" onclick="showNotification('🌐 Rede carregada! Todos os projetos disponíveis.', 'success')">🌐 Ver Rede Completa</button>
                     </div>
 
                     <!-- 🧭 NAVEGAÇÃO RÁPIDA -->
@@ -386,28 +434,16 @@
                 <div class="dev-links">
                     <a href="#origem">↑ Início</a>
                     <span>•</span>
-                    <a href="javascript:void(0)" onclick="window.elliotDev.exportData()">📁 Backup</a>
+                    <a href="#comentarios">💬 Comentários</a>
                     <span>•</span>
                     <a href="#rede">🌐 Rede</a>
-                    <span>•</span>
-                    <a href="https://jonathasfelipe.github.io/Elliot/index.html" target="_blank">🏠 Site Principal</a>
-                </div>
-                
-                <!-- FOOTER COM LINKS PARA TODOS OS PROJETOS -->
-                <div class="global-footer-links">
-                    <h4>🌐 Todos os Projetos Elliot:</h4>
-                    <div class="footer-project-grid">
-                        <a href="https://jonathasfelipe.github.io/Eliiot-IA-project" target="_blank">🤖 Elliot IA Project</a>
-                        <a href="https://jonathasfelipe.github.io/Elliot/index.html" target="_blank">🏠 Site Elliot</a>
-                        <a href="https://jonathasfelipe.github.io/Elliot/criancas.html" target="_blank">👶 Para Crianças</a>
-                        <a href="https://jonathasfelipe.github.io/Elliot/animes.html" target="_blank">🎌 Animes</a>
-                        <a href="https://jonathasfelipe.github.io/Elliot/tecnologia.html" target="_blank">💻 Tecnologia</a>
-                        <a href="https://github.com/jonathasfelipe" target="_blank">⚡ GitHub</a>
-                    </div>
                 </div>
             </div>
         </footer>
     </div>
+
+    <!-- Sistema de Notificações -->
+    <div id="notificationContainer" class="notification-container"></div>
 
     <!-- JavaScript DIRETO -->
     <script src="app.js"></script>
