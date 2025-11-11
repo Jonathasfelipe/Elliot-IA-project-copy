@@ -1,23 +1,36 @@
-// app.js - Elliot Dev Lab - Versão Completa e Corrigida
+// app.js - Elliot Dev Lab - Versão Corrigida para GitHub Pages
 
 class ElliotDevLab {
     constructor() {
+        this.isInitialized = false;
         this.init();
     }
 
     init() {
-        this.setupEventListeners();
-        this.setupDialogueSystem();
-        this.setupCommentSystem();
-        this.setupProgressBar();
-        this.setupThemeSwitcher();
-        this.setupScrollToTop();
-        this.loadInitialData();
+        if (this.isInitialized) return;
+        
+        try {
+            this.setupEventListeners();
+            this.setupDialogueSystem();
+            this.setupCommentSystem();
+            this.setupProgressBar();
+            this.setupThemeSwitcher();
+            this.setupScrollToTop();
+            this.loadInitialData();
+            this.isInitialized = true;
+            
+            console.log('✅ Elliot Dev Lab inicializado com sucesso');
+        } catch (error) {
+            console.error('❌ Erro na inicialização:', error);
+        }
     }
 
     setupEventListeners() {
         // Theme switcher
-        document.getElementById('themeBtn').addEventListener('click', () => this.toggleTheme());
+        const themeBtn = document.getElementById('themeBtn');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', () => this.toggleTheme());
+        }
         
         // Progress bar on scroll
         window.addEventListener('scroll', () => this.updateProgressBar());
@@ -35,112 +48,144 @@ class ElliotDevLab {
     }
 
     setupDialogueSystem() {
-        const floatingBtn = document.getElementById('dialogueFloatingBtn');
-        const popup = document.getElementById('dialoguePopup');
-        const closeBtn = document.getElementById('closeDialogue');
-        const overlay = document.getElementById('dialogueOverlay');
-        const form = document.getElementById('dialogueForm');
-        const input = document.getElementById('dialogueInput');
-        const messages = document.getElementById('dialogueMessages');
+        try {
+            const floatingBtn = document.getElementById('dialogueFloatingBtn');
+            const popup = document.getElementById('dialoguePopup');
+            const closeBtn = document.getElementById('closeDialogue');
+            const overlay = document.getElementById('dialogueOverlay');
+            const form = document.getElementById('dialogueForm');
+            const input = document.getElementById('dialogueInput');
 
-        // Open dialogue
-        floatingBtn.addEventListener('click', () => {
-            popup.classList.add('open');
-            overlay.classList.add('active');
-            input.focus();
-        });
-
-        // Close dialogue
-        const closeDialogue = () => {
-            popup.classList.remove('open');
-            overlay.classList.remove('active');
-        };
-
-        closeBtn.addEventListener('click', closeDialogue);
-        overlay.addEventListener('click', closeDialogue);
-
-        // Handle form submission
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const message = input.value.trim();
-            if (message) {
-                this.addUserMessage(message);
-                input.value = '';
-                
-                // Simulate Elliot thinking
-                setTimeout(() => {
-                    this.addElliotResponse(message);
-                }, 1000);
+            if (!floatingBtn || !popup) {
+                console.warn('⚠️ Elementos do diálogo não encontrados');
+                return;
             }
-        });
 
-        // Close with Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && popup.classList.contains('open')) {
-                closeDialogue();
+            // Open dialogue
+            floatingBtn.addEventListener('click', () => {
+                popup.classList.add('open');
+                overlay.classList.add('active');
+                if (input) input.focus();
+            });
+
+            // Close dialogue
+            const closeDialogue = () => {
+                popup.classList.remove('open');
+                overlay.classList.remove('active');
+            };
+
+            if (closeBtn) closeBtn.addEventListener('click', closeDialogue);
+            if (overlay) overlay.addEventListener('click', closeDialogue);
+
+            // Handle form submission
+            if (form && input) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const message = input.value.trim();
+                    if (message) {
+                        this.addUserMessage(message);
+                        input.value = '';
+                        
+                        // Simulate Elliot thinking
+                        setTimeout(() => {
+                            this.addElliotResponse(message);
+                        }, 1000);
+                    }
+                });
             }
-        });
+
+            // Close with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && popup.classList.contains('open')) {
+                    closeDialogue();
+                }
+            });
+        } catch (error) {
+            console.error('❌ Erro no sistema de diálogo:', error);
+        }
     }
 
     setupCommentSystem() {
-        const commentForm = document.getElementById('commentForm');
-        const commentInput = document.getElementById('commentInput');
-        const commentsList = document.getElementById('commentsList');
+        try {
+            const commentForm = document.getElementById('commentForm');
+            const commentInput = document.getElementById('commentInput');
 
-        commentForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const content = commentInput.value.trim();
-            if (content) {
-                this.addComment(content);
-                commentInput.value = '';
-                showNotification('💬 Comentário adicionado com sucesso!', 'success');
+            if (!commentForm || !commentInput) {
+                console.warn('⚠️ Sistema de comentários não encontrado');
+                return;
             }
-        });
 
-        this.displayComments();
+            commentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const content = commentInput.value.trim();
+                if (content) {
+                    this.addComment(content);
+                    commentInput.value = '';
+                    this.showNotification('💬 Comentário adicionado com sucesso!', 'success');
+                }
+            });
+
+            this.displayComments();
+        } catch (error) {
+            console.error('❌ Erro no sistema de comentários:', error);
+        }
     }
 
     addComment(content) {
-        const comments = this.getComments();
-        const newComment = {
-            id: Date.now(),
-            content,
-            timestamp: new Date().toISOString(),
-            author: 'Visitante'
-        };
-        
-        comments.unshift(newComment);
-        localStorage.setItem('elliot-comments', JSON.stringify(comments));
-        this.displayComments();
-        this.updateStats();
+        try {
+            const comments = this.getComments();
+            const newComment = {
+                id: Date.now(),
+                content,
+                timestamp: new Date().toISOString(),
+                author: 'Visitante'
+            };
+            
+            comments.unshift(newComment);
+            localStorage.setItem('elliot-comments', JSON.stringify(comments));
+            this.displayComments();
+            this.updateStats();
+        } catch (error) {
+            console.error('❌ Erro ao adicionar comentário:', error);
+        }
     }
 
     getComments() {
-        return JSON.parse(localStorage.getItem('elliot-comments') || '[]');
+        try {
+            return JSON.parse(localStorage.getItem('elliot-comments') || '[]');
+        } catch {
+            return [];
+        }
     }
 
     displayComments() {
-        const commentsList = document.getElementById('commentsList');
-        const comments = this.getComments();
-        
-        if (comments.length === 0) {
-            commentsList.innerHTML = `
-                <div class="comment-item" style="text-align: center; color: var(--text-secondary);">
-                    <p>Nenhum comentário ainda. Seja o primeiro a compartilhar seus pensamentos!</p>
-                </div>
-            `;
-            return;
-        }
+        try {
+            const commentsList = document.getElementById('commentsList');
+            if (!commentsList) return;
 
-        commentsList.innerHTML = comments.map(comment => `
-            <div class="comment-item">
-                <div class="comment-header">
-                    <span class="comment-author">${comment.author}</span>
-                    <span class="comment-date">${new Date(comment.timestamp).toLocaleDateString('pt-BR')}</span>
+            const comments = this.getComments();
+            
+            if (comments.length === 0) {
+                commentsList.innerHTML = `
+                    <div class="comment-item" style="text-align: center; color: var(--text-secondary);">
+                        <p>Nenhum comentário ainda. Seja o primeiro a compartilhar seus pensamentos!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            commentsList.innerHTML = comments.map(comment => `
+                <div class="comment-item">
+                    <div class="comment-header">
+                        <span class="comment-author">${comment.author}</span>
+                        <span class="comment-date">${new Date(comment.timestamp).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <div class="comment-content">${this.escapeHtml(comment.content)}</div>
                 </div>
-                <div class="comment-content">${this.escapeHtml(comment.content)}</div>
-            </div>
-        `).join('');
+            `).join('');
+        } catch (error) {
+            console.error('❌ Erro ao exibir comentários:', error);
+        }
     }
 
     escapeHtml(unsafe) {
@@ -153,54 +198,69 @@ class ElliotDevLab {
     }
 
     addUserMessage(message) {
-        const messages = document.getElementById('dialogueMessages');
-        const messageElement = document.createElement('div');
-        messageElement.className = 'message user';
-        messageElement.innerHTML = `
-            <div class="message-avatar">V</div>
-            <div class="message-content">
-                <p>${this.escapeHtml(message)}</p>
-                <span class="message-time">Agora</span>
-            </div>
-        `;
-        messages.appendChild(messageElement);
-        messages.scrollTop = messages.scrollHeight;
-    }
+        try {
+            const messages = document.getElementById('dialogueMessages');
+            if (!messages) return;
 
-    addElliotResponse(userMessage) {
-        const messages = document.getElementById('dialogueMessages');
-        
-        // Show typing indicator
-        const typingIndicator = document.createElement('div');
-        typingIndicator.className = 'message elliot';
-        typingIndicator.innerHTML = `
-            <div class="message-avatar">E</div>
-            <div class="typing-indicator">
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-                <div class="typing-dot"></div>
-            </div>
-        `;
-        messages.appendChild(typingIndicator);
-        messages.scrollTop = messages.scrollHeight;
-
-        // Simulate thinking time
-        setTimeout(() => {
-            typingIndicator.remove();
-            
-            const response = this.generateElliotResponse(userMessage);
             const messageElement = document.createElement('div');
-            messageElement.className = 'message elliot';
+            messageElement.className = 'message user';
             messageElement.innerHTML = `
-                <div class="message-avatar">E</div>
+                <div class="message-avatar">V</div>
                 <div class="message-content">
-                    <p>${response}</p>
+                    <p>${this.escapeHtml(message)}</p>
                     <span class="message-time">Agora</span>
                 </div>
             `;
             messages.appendChild(messageElement);
             messages.scrollTop = messages.scrollHeight;
-        }, 2000);
+        } catch (error) {
+            console.error('❌ Erro ao adicionar mensagem do usuário:', error);
+        }
+    }
+
+    addElliotResponse(userMessage) {
+        try {
+            const messages = document.getElementById('dialogueMessages');
+            if (!messages) return;
+            
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message elliot';
+            typingIndicator.innerHTML = `
+                <div class="message-avatar">E</div>
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            messages.appendChild(typingIndicator);
+            messages.scrollTop = messages.scrollHeight;
+
+            // Simulate thinking time
+            setTimeout(() => {
+                try {
+                    typingIndicator.remove();
+                    
+                    const response = this.generateElliotResponse(userMessage);
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message elliot';
+                    messageElement.innerHTML = `
+                        <div class="message-avatar">E</div>
+                        <div class="message-content">
+                            <p>${response}</p>
+                            <span class="message-time">Agora</span>
+                        </div>
+                    `;
+                    messages.appendChild(messageElement);
+                    messages.scrollTop = messages.scrollHeight;
+                } catch (error) {
+                    console.error('❌ Erro na resposta do Elliot:', error);
+                }
+            }, 2000);
+        } catch (error) {
+            console.error('❌ Erro ao adicionar resposta do Elliot:', error);
+        }
     }
 
     generateElliotResponse(userMessage) {
@@ -244,109 +304,137 @@ class ElliotDevLab {
     }
 
     updateProgressBar() {
-        const progressBar = document.getElementById('progressBar');
-        const windowHeight = window.innerHeight;
-        const documentHeight = document.documentElement.scrollHeight - windowHeight;
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const progress = (scrollTop / documentHeight) * 100;
-        
-        progressBar.style.width = progress + '%';
+        try {
+            const progressBar = document.getElementById('progressBar');
+            if (!progressBar) return;
+
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight - windowHeight;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const progress = (scrollTop / documentHeight) * 100;
+            
+            progressBar.style.width = progress + '%';
+        } catch (error) {
+            console.error('❌ Erro na barra de progresso:', error);
+        }
     }
 
     setupThemeSwitcher() {
-        // Load saved theme
-        const savedTheme = localStorage.getItem('elliot-theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', savedTheme);
+        try {
+            // Load saved theme
+            const savedTheme = localStorage.getItem('elliot-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        } catch (error) {
+            console.error('❌ Erro no theme switcher:', error);
+        }
     }
 
     toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('elliot-theme', newTheme);
-        
-        showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info');
+        try {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('elliot-theme', newTheme);
+            
+            this.showNotification(`Tema ${newTheme === 'dark' ? 'escuro' : 'claro'} ativado`, 'info');
+        } catch (error) {
+            console.error('❌ Erro ao alternar tema:', error);
+        }
     }
 
     setupScrollToTop() {
-        const topBtn = document.getElementById('topBtn');
-        
-        window.addEventListener('scroll', () => {
-            if (window.pageYOffset > 300) {
-                topBtn.classList.add('show');
-            } else {
-                topBtn.classList.remove('show');
-            }
-        });
+        try {
+            const topBtn = document.getElementById('topBtn');
+            if (!topBtn) return;
+            
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    topBtn.classList.add('show');
+                } else {
+                    topBtn.classList.remove('show');
+                }
+            });
 
-        topBtn.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
+            topBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        } catch (error) {
+            console.error('❌ Erro no botão voltar ao topo:', error);
+        }
     }
 
     loadInitialData() {
-        this.updateStats();
-        
-        // Show welcome notification
-        setTimeout(() => {
-            showNotification('🚀 Elliot Dev Lab carregado! Explore os projetos e deixe seus comentários.', 'success');
-        }, 1000);
+        try {
+            this.updateStats();
+            
+            // Show welcome notification
+            setTimeout(() => {
+                this.showNotification('🚀 Elliot Dev Lab carregado! Explore os projetos e deixe seus comentários.', 'success');
+            }, 1000);
+        } catch (error) {
+            console.error('❌ Erro ao carregar dados iniciais:', error);
+        }
     }
 
     updateStats() {
-        const comments = this.getComments();
-        document.getElementById('commentsCount').textContent = comments.length;
-        document.getElementById('ideasCount').textContent = Math.floor(comments.length * 1.5);
-        
-        // Calculate Elliot progress based on interactions
-        const progress = Math.min(5 + (comments.length * 2), 100);
-        document.getElementById('elliotProgress').textContent = progress + '%';
+        try {
+            const comments = this.getComments();
+            const commentsCount = document.getElementById('commentsCount');
+            const ideasCount = document.getElementById('ideasCount');
+            const elliotProgress = document.getElementById('elliotProgress');
+
+            if (commentsCount) commentsCount.textContent = comments.length;
+            if (ideasCount) ideasCount.textContent = Math.floor(comments.length * 1.5);
+            
+            // Calculate Elliot progress based on interactions
+            const progress = Math.min(5 + (comments.length * 2), 100);
+            if (elliotProgress) elliotProgress.textContent = progress + '%';
+        } catch (error) {
+            console.error('❌ Erro ao atualizar estatísticas:', error);
+        }
     }
 
-    // Public methods for quick actions
-    suggestIdea() {
-        showNotification('💡 Ideia registrada! Elliot analisará sua sugestão.', 'success');
-    }
-
-    feedback() {
-        showNotification('📝 Feedback enviado! Obrigado pela contribuição.', 'info');
-    }
-}
-
-// Notification System
-function showNotification(message, type = 'info', duration = 5000) {
-    const container = document.getElementById('notificationContainer');
-    if (!container) return;
-
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    
-    const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: '💡'
-    };
-
-    notification.innerHTML = `
-        <div class="notification-icon">${icons[type] || '💡'}</div>
-        <div class="notification-content">
-            <div class="notification-message">${message}</div>
-        </div>
-    `;
-
-    container.appendChild(notification);
-
-    // Auto remove after duration
-    setTimeout(() => {
-        notification.classList.add('hiding');
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
+    showNotification(message, type = 'info', duration = 5000) {
+        try {
+            const container = document.getElementById('notificationContainer');
+            if (!container) {
+                console.warn('⚠️ Container de notificações não encontrado');
+                return;
             }
-        }, 300);
-    }, duration);
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: '💡'
+            };
+
+            notification.innerHTML = `
+                <div class="notification-icon">${icons[type] || '💡'}</div>
+                <div class="notification-content">
+                    <div class="notification-message">${message}</div>
+                </div>
+            `;
+
+            container.appendChild(notification);
+
+            // Auto remove after duration
+            setTimeout(() => {
+                notification.classList.add('hiding');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, duration);
+        } catch (error) {
+            console.error('❌ Erro ao mostrar notificação:', error);
+        }
+    }
 }
 
 // Initialize the application
@@ -354,21 +442,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.elliotDev = new ElliotDevLab();
 });
 
-// Export data function (for future use)
-window.exportElliotData = function() {
-    const data = {
-        comments: window.elliotDev.getComments(),
-        theme: localStorage.getItem('elliot-theme'),
-        timestamp: new Date().toISOString()
-    };
-    
-    const dataStr = JSON.stringify(data, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = `elliot-data-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    showNotification('📁 Dados exportados com sucesso!', 'success');
-};
+// Funções globais para uso nos botões
+function showNotification(message, type = 'info') {
+    if (window.elliotDev && window.elliotDev.showNotification) {
+        window.elliotDev.showNotification(message, type);
+    } else {
+        // Fallback simples se o ElliotDev não estiver carregado
+        alert(message);
+    }
+}
+
+// Fallback para caso o JavaScript falhe
+window.addEventListener('error', (e) => {
+    console.error('Erro global capturado:', e.error);
+});
