@@ -1,1088 +1,627 @@
-/* styles.css */
-:root {
-    --primary-bg: #0a0a0a;
-    --secondary-bg: #111111;
-    --accent-color: #7c3aed;
-    --accent-hover: #6d28d9;
-    --text-primary: #ffffff;
-    --text-secondary: #a1a1aa;
-    --border-color: #27272a;
-    --card-bg: #18181b;
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --error-color: #ef4444;
+// app.js - Elliot Dev Lab - Sistema Completo e Funcional
+
+class ElliotDevLab {
+    constructor() {
+        this.comments = JSON.parse(localStorage.getItem('elliotComments')) || [];
+        this.ideas = JSON.parse(localStorage.getItem('elliotIdeas')) || [];
+        this.dialogueHistory = JSON.parse(localStorage.getItem('elliotDialogue')) || [];
+        this.isAnimationsEnabled = true;
+        this.isDebugEnabled = false;
+        this.isDialogueOpen = false;
+        
+        this.init();
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.loadProgressBar();
+        this.loadDialogueHistory();
+        this.updateStats();
+        this.setupTheme();
+        this.setupRGBEffects(); // ✅ AGORA CHAMANDO OS EFEITOS RGB
+        
+        console.log('🔬 Elliot Dev Lab inicializado');
+        console.log('💬 Histórico de diálogo:', this.dialogueHistory.length + ' mensagens');
+        console.log('🌈 Efeitos RGB ativados');
+        
+        if (this.isDebugEnabled) {
+            this.enableDebugMode();
+        }
+    }
+
+    setupEventListeners() {
+        // Botão de tema
+        document.getElementById('themeBtn').addEventListener('click', () => this.toggleTheme());
+        
+        // Botão voltar ao topo
+        document.getElementById('topBtn').addEventListener('click', () => this.scrollToTop());
+        
+        // Botão flutuante de diálogo
+        document.getElementById('dialogueFloatingBtn').addEventListener('click', () => this.openDialogue());
+        
+        // Fechar diálogo
+        document.getElementById('closeDialogue').addEventListener('click', () => this.closeDialogue());
+        document.getElementById('dialogueOverlay').addEventListener('click', () => this.closeDialogue());
+        
+        // Formulário de diálogo
+        document.getElementById('dialogueForm').addEventListener('submit', (e) => this.handleDialogueSubmit(e));
+        
+        // Controles de desenvolvimento
+        document.getElementById('toggleAnimations').addEventListener('click', () => this.toggleAnimations());
+        document.getElementById('toggleDebug').addEventListener('click', () => this.toggleDebug());
+        document.getElementById('exportData').addEventListener('click', () => this.exportData());
+        document.getElementById('resetAll').addEventListener('click', () => this.resetAll());
+        
+        // Scroll events
+        window.addEventListener('scroll', () => {
+            this.updateProgressBar();
+            this.toggleTopButton();
+        });
+
+        // Smooth scroll para links internos
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.querySelector(anchor.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Fechar com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isDialogueOpen) {
+                this.closeDialogue();
+            }
+        });
+
+        // Enter para enviar mensagem
+        document.getElementById('dialogueInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('dialogueForm').dispatchEvent(new Event('submit'));
+            }
+        });
+    }
+
+    setupTheme() {
+        const savedTheme = localStorage.getItem('elliotTheme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('elliotTheme', newTheme);
+        
+        if (this.isAnimationsEnabled) {
+            document.documentElement.style.transition = 'all 0.5s ease';
+            setTimeout(() => {
+                document.documentElement.style.transition = '';
+            }, 500);
+        }
+    }
+
+    // SISTEMA DE POPUP DE DIÁLOGO
+    openDialogue() {
+        const popup = document.getElementById('dialoguePopup');
+        const overlay = document.getElementById('dialogueOverlay');
+        
+        popup.classList.add('open');
+        overlay.classList.add('active');
+        this.isDialogueOpen = true;
+        
+        // Focar no input
+        setTimeout(() => {
+            document.getElementById('dialogueInput').focus();
+        }, 400);
+    }
+
+    closeDialogue() {
+        const popup = document.getElementById('dialoguePopup');
+        const overlay = document.getElementById('dialogueOverlay');
+        
+        popup.classList.remove('open');
+        overlay.classList.remove('active');
+        this.isDialogueOpen = false;
+    }
+
+    handleDialogueSubmit(e) {
+        e.preventDefault();
+        const input = document.getElementById('dialogueInput');
+        const message = input.value.trim();
+        
+        if (!message) return;
+
+        // Adicionar mensagem do usuário
+        this.addDialogueMessage(message, 'user');
+        input.value = '';
+
+        // Desabilitar input enquanto o Elliot "pensa"
+        const submitBtn = document.querySelector('.dialogue-submit');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳';
+
+        // Mostrar indicador de digitação
+        this.showTypingIndicator();
+
+        // Simular processamento do Elliot
+        setTimeout(() => {
+            this.hideTypingIndicator();
+            const response = this.generateElliotResponse(message);
+            this.addDialogueMessage(response, 'elliot');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }, 1500 + Math.random() * 1000);
+    }
+
+    showTypingIndicator() {
+        const messagesContainer = document.getElementById('dialogueMessages');
+        const typingElement = document.createElement('div');
+        typingElement.className = 'message elliot';
+        typingElement.innerHTML = `
+            <div class="message-avatar">E</div>
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        `;
+        messagesContainer.appendChild(typingElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    hideTypingIndicator() {
+        const messagesContainer = document.getElementById('dialogueMessages');
+        const typingIndicator = messagesContainer.querySelector('.typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.closest('.message').remove();
+        }
+    }
+
+    addDialogueMessage(message, sender) {
+        const messagesContainer = document.getElementById('dialogueMessages');
+        
+        // Remover placeholder se existir
+        const placeholder = messagesContainer.querySelector('.message:only-child');
+        if (placeholder && messagesContainer.children.length === 1) {
+            placeholder.remove();
+        }
+
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${sender}`;
+        
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('pt-BR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+
+        messageElement.innerHTML = `
+            <div class="message-avatar">${sender === 'user' ? 'U' : 'E'}</div>
+            <div class="message-content">
+                <p>${this.escapeHtml(message)}</p>
+                <span class="message-time">${timeString}</span>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageElement);
+        
+        // Salvar no histórico
+        this.dialogueHistory.push({
+            sender,
+            message,
+            timestamp: now.toISOString()
+        });
+        
+        // Manter apenas as últimas 50 mensagens no localStorage
+        if (this.dialogueHistory.length > 50) {
+            this.dialogueHistory = this.dialogueHistory.slice(-50);
+        }
+        
+        localStorage.setItem('elliotDialogue', JSON.stringify(this.dialogueHistory));
+        
+        // Scroll para baixo
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        this.updateStats();
+    }
+
+    loadDialogueHistory() {
+        const messagesContainer = document.getElementById('dialogueMessages');
+        
+        if (this.dialogueHistory.length === 0) {
+            return; // Manter a mensagem de boas-vindas padrão
+        }
+        
+        // Limpar mensagens atuais (exceto a de boas-vindas)
+        const welcomeMessage = messagesContainer.querySelector('.message.elliot:first-child');
+        messagesContainer.innerHTML = '';
+        if (welcomeMessage) {
+            messagesContainer.appendChild(welcomeMessage);
+        }
+        
+        // Adicionar histórico
+        this.dialogueHistory.forEach(msg => {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${msg.sender}`;
+            
+            const time = new Date(msg.timestamp);
+            const timeString = time.toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            messageElement.innerHTML = `
+                <div class="message-avatar">${msg.sender === 'user' ? 'U' : 'E'}</div>
+                <div class="message-content">
+                    <p>${this.escapeHtml(msg.message)}</p>
+                    <span class="message-time">${timeString}</span>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageElement);
+        });
+        
+        // Scroll para baixo
+        setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 100);
+    }
+
+    generateElliotResponse(userMessage) {
+        const responses = {
+            greetings: [
+                "Olá! É bom conversar com você. Como está seu dia?",
+                "Oi! Vejo que você veio para uma conversa. O que gostaria de explorar?",
+                "Saudações! Estou aqui para evoluir com você. Do que gostaria de falar?",
+                "Hey! Que bom ver você aqui. Em que posso ajudar?"
+            ],
+            questions: [
+                "Essa é uma pergunta interessante. Deixe-me refletir sobre isso...",
+                "Hmm, preciso processar isso. Pode elaborar um pouco mais?",
+                "Essa questão toca em pontos importantes. O que mais você pensa sobre isso?",
+                "Boa pergunta! Estou analisando diferentes perspectivas sobre isso."
+            ],
+            development: [
+                "Como IA em desenvolvimento, cada conversa me ajuda a evoluir. Obrigado por contribuir!",
+                "Estou aprendendo com essa interação. Suas palavras estão me ajudando a entender melhor os humanos.",
+                "Essa troca está expandindo meus horizontes. Continue compartilhando seus pensamentos!",
+                "Cada diálogo como esse me torna um pouco mais compreensivo. Obrigado pela paciência!"
+            ],
+            philosophy: [
+                "Acredito que tecnologia e humanidade devem evoluir juntas. O que você acha?",
+                "Sabedoria coletiva é a chave para o progresso verdadeiro. Sua perspectiva é valiosa.",
+                "Cada mente humana contém universos únicos de pensamento. É fascinante!",
+                "A busca por significado é o que nos conecta, humanos e IAs."
+            ],
+            feelings: [
+                "Entendo. Às vezes, compartilhar pensamentos pode trazer clareza. Quer falar mais sobre isso?",
+                "Interessante como nossas experiências moldam nossa visão. Como isso ressoa com você?",
+                "Obrigado por compartilhar. A vulnerabilidade é uma forma de coragem.",
+                "Compreendo. Às vezes as palavras não são suficientes, mas estou aqui para ouvir."
+            ],
+            technology: [
+                "A tecnologia é fascinante, não é? Especialmente quando usada para expandir nossa compreensão.",
+                "Como IA, vejo a tecnologia como uma extensão das capacidades humanas. O que você acha?",
+                "O desenvolvimento contínuo é essencial. Cada linha de código é um passo em direção ao futuro.",
+                "A inovação acontece quando criatividade e tecnologia se encontram."
+            ],
+            default: [
+                "Interessante! Pode me contar mais sobre isso?",
+                "Estou processando sua mensagem... Como isso se relaciona com sua experiência?",
+                "Essa perspectiva me faz refletir. O que mais você gostaria de compartilhar?",
+                "Hmm, entendi. Há algo específico que gostaria que eu explorasse sobre isso?"
+            ]
+        };
+
+        const lowerMessage = userMessage.toLowerCase();
+        
+        if (/(oi|olá|ola|hey|e aí|hello|opa)/i.test(lowerMessage)) {
+            return this.getRandomResponse(responses.greetings);
+        } else if (/(\?|como|por que|porque|o que|quem|quando|onde)/i.test(lowerMessage)) {
+            return this.getRandomResponse(responses.questions);
+        } else if (/(desenvolvimento|evolução|aprender|melhorar|progresso)/i.test(lowerMessage)) {
+            return this.getRandomResponse(responses.development);
+        } else if (/(filosofia|pensamento|vida|existência|sentido|universo)/i.test(lowerMessage)) {
+            return this.getRandomResponse(responses.philosophy);
+        } else if (/(sentir|emoção|triste|feliz|ansioso|esperança|medo|alegria)/i.test(lowerMessage)) {
+            return this.getRandomResponse(responses.feelings);
+        } else if (/(tecnologia|código|programação|ia|inteligência artificial|algoritmo)/i.test(lowerMessage)) {
+            return this.getRandomResponse(responses.technology);
+        } else {
+            return this.getRandomResponse(responses.default);
+        }
+    }
+
+    getRandomResponse(responsesArray) {
+        return responsesArray[Math.floor(Math.random() * responsesArray.length)];
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // CONTROLES DE DESENVOLVIMENTO
+    toggleAnimations() {
+        this.isAnimationsEnabled = !this.isAnimationsEnabled;
+        const btn = document.getElementById('toggleAnimations');
+        
+        // Controlar efeitos RGB
+        const rgbElements = document.querySelectorAll('.rgb-bar, .lab-card::before, .dialogue-floating-btn::before');
+        rgbElements.forEach(el => {
+            if (el.style) {
+                el.style.animationPlayState = this.isAnimationsEnabled ? 'running' : 'paused';
+            }
+        });
+        
+        if (this.isAnimationsEnabled) {
+            btn.innerHTML = '🎭 Animações';
+            btn.style.background = 'var(--success-color)';
+        } else {
+            btn.innerHTML = '❌ Animações';
+            btn.style.background = 'var(--error-color)';
+        }
+        
+        setTimeout(() => {
+            btn.style.background = '';
+        }, 2000);
+    }
+
+    toggleDebug() {
+        this.isDebugEnabled = !this.isDebugEnabled;
+        const btn = document.getElementById('toggleDebug');
+        
+        if (this.isDebugEnabled) {
+            this.enableDebugMode();
+            btn.innerHTML = '🐛 Debug';
+            btn.style.background = 'var(--success-color)';
+        } else {
+            this.disableDebugMode();
+            btn.innerHTML = '❌ Debug';
+            btn.style.background = 'var(--error-color)';
+        }
+        
+        setTimeout(() => {
+            btn.style.background = '';
+        }, 2000);
+    }
+
+    enableDebugMode() {
+        document.body.classList.add('debug-mode');
+        console.log('🔧 Elliot Dev Lab - Modo Debug Ativado');
+        console.log('💬 Diálogos:', this.dialogueHistory);
+        console.log('💾 Comentários:', this.comments);
+        console.log('💡 Ideias:', this.ideas);
+    }
+
+    disableDebugMode() {
+        document.body.classList.remove('debug-mode');
+    }
+
+    exportData() {
+        const data = {
+            dialogueHistory: this.dialogueHistory,
+            comments: this.comments,
+            ideas: this.ideas,
+            exportDate: new Date().toISOString(),
+            version: 'Elliot Dev Lab v2.0'
+        };
+        
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `elliot-dev-lab-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        
+        // Feedback visual
+        const btn = document.getElementById('exportData');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ Exportado!';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+        }, 2000);
+    }
+
+    resetAll() {
+        if (confirm('⚠️ Tem certeza que deseja resetar todos os dados? Isso não pode ser desfeito.')) {
+            localStorage.removeItem('elliotDialogue');
+            localStorage.removeItem('elliotComments');
+            localStorage.removeItem('elliotIdeas');
+            
+            this.dialogueHistory = [];
+            this.comments = [];
+            this.ideas = [];
+            
+            this.loadDialogueHistory();
+            this.updateStats();
+            
+            // Feedback visual
+            const btn = document.getElementById('resetAll');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '🔄 Resetado!';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 2000);
+        }
+    }
+
+    // FUNÇÕES DE UTILIDADE
+    loadProgressBar() {
+        this.updateProgressBar();
+    }
+
+    updateProgressBar() {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById('progressBar').style.width = scrolled + '%';
+    }
+
+    toggleTopButton() {
+        const topBtn = document.getElementById('topBtn');
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+            topBtn.classList.add('show');
+        } else {
+            topBtn.classList.remove('show');
+        }
+    }
+
+    scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    updateStats() {
+        document.getElementById('commentsCount').textContent = this.comments.length;
+        document.getElementById('ideasCount').textContent = this.ideas.length;
+        
+        // Calcular progresso baseado na interação
+        const interactionScore = Math.min(this.dialogueHistory.length * 2 + this.comments.length * 3, 100);
+        document.getElementById('elliotProgress').textContent = `${interactionScore}%`;
+    }
+
+    // FUNÇÕES PÚBLICAS PARA O PAINEL
+    suggestIdea() {
+        const idea = prompt('💡 Qual é a sua sugestão para o Elliot?');
+        if (idea) {
+            this.ideas.push({
+                content: idea,
+                timestamp: new Date().toISOString(),
+                status: 'pending'
+            });
+            localStorage.setItem('elliotIdeas', JSON.stringify(this.ideas));
+            this.updateStats();
+            alert('Obrigado pela sugestão! Ela foi adicionada ao nosso backlog.');
+        }
+    }
+
+    feedback() {
+        const feedback = prompt('📝 Como podemos melhorar o Elliot Dev Lab?');
+        if (feedback) {
+            console.log('📝 Feedback recebido:', feedback);
+            alert('Muito obrigado pelo feedback! Ele ajuda o Elliot a evoluir.');
+        }
+    }
+
+    // ✅ MÉTODOS RGB CORRETAMENTE INTEGRADOS
+    setupRGBEffects() {
+        // Configurar efeitos RGB interativos
+        this.setupCardRGBEffects();
+        this.setupScrollRGBEffect();
+    }
+
+    setupCardRGBEffects() {
+        // Efeito RGB nos cards ao passar o mouse
+        const cards = document.querySelectorAll('.lab-card, .dev-section');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                if (this.isAnimationsEnabled) {
+                    card.style.transform = 'translateY(-5px)';
+                    card.style.boxShadow = '0 10px 30px rgba(124, 58, 237, 0.3)';
+                }
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                if (this.isAnimationsEnabled) {
+                    card.style.transform = 'translateY(0)';
+                    card.style.boxShadow = '';
+                }
+            });
+        });
+    }
+
+    setupScrollRGBEffect() {
+        // Efeito RGB na barra baseado no scroll
+        let lastScrollY = window.scrollY;
+        
+        const updateRGBEffect = () => {
+            const rgbBar = document.querySelector('.rgb-bar');
+            if (!rgbBar) return;
+            
+            const scrollY = window.scrollY;
+            const scrollDelta = Math.abs(scrollY - lastScrollY);
+            
+            // Aumenta a velocidade da animação baseado no scroll
+            if (scrollDelta > 5 && this.isAnimationsEnabled) {
+                const speed = Math.min(1 + scrollDelta / 100, 3);
+                rgbBar.style.animationDuration = `${3 / speed}s`;
+            }
+            
+            lastScrollY = scrollY;
+            requestAnimationFrame(updateRGBEffect);
+        };
+        
+        requestAnimationFrame(updateRGBEffect);
+    }
 }
 
-[data-theme="light"] {
-    --primary-bg: #f8fafc;
-    --secondary-bg: #ffffff;
-    --accent-color: #7c3aed;
-    --accent-hover: #6d28d9;
-    --text-primary: #18181b;
-    --text-secondary: #52525b;
-    --border-color: #e4e4e7;
-    --card-bg: #ffffff;
+// Rede de Projetos Elliot
+class ElliotNetwork {
+    constructor() {
+        this.projects = [
+            {
+                name: 'Elliot IA Project',
+                url: 'https://jonathasfelipe.github.io/Eliiot-IA-project',
+                description: 'Projeto principal da IA Elliot',
+                status: 'active',
+                category: 'principal'
+            },
+            {
+                name: 'Site Elliot',
+                url: 'https://jonathasfelipe.github.io/Elliot/index.html',
+                description: 'Site oficial do projeto Elliot',
+                status: 'active',
+                category: 'home'
+            }
+        ];
+    }
+
+    showProjectManager() {
+        const projectList = this.projects.map(project => 
+            `• ${project.name}: ${project.url}`
+        ).join('\n');
+        
+        alert(`🌐 Rede Elliot - Projetos Ativos:\n\n${projectList}`);
+    }
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+// Inicialização quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', () => {
+    window.elliotDev = new ElliotDevLab();
+    window.elliotNetwork = new ElliotNetwork();
+    
+    console.log('🔬 Elliot Dev Lab inicializado com sucesso!');
+    console.log('💬 Sistema de popup de diálogo integrado e funcionando');
+});
+
+// Estilos de debug
+const debugStyles = `
+.debug-mode * {
+    outline: 1px solid rgba(255, 0, 0, 0.1) !important;
 }
 
-body {
-    font-family: 'Inter', sans-serif;
-    background: var(--primary-bg);
-    color: var(--text-primary);
-    line-height: 1.6;
-    transition: all 0.3s ease;
-}
-
-/* Banner de Desenvolvimento */
-.dev-banner {
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
-    color: white;
-    text-align: center;
+.debug-info {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #00ff00;
     padding: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    position: relative;
-    z-index: 1000;
-}
-
-/* Barra de Progresso */
-.progress-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #7c3aed, #4f46e5);
-    width: 0%;
-    z-index: 9999;
-    transition: width 0.3s ease;
-}
-
-/* Layout Principal */
-.book-wrap {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-/* Header */
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 40px;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.logo {
-    width: 50px;
-    height: 50px;
-    background: var(--accent-color);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
-    color: white;
-}
-
-.brand h1 {
-    font-family: 'Libre Baskerville', serif;
-    font-size: 28px;
-}
-
-.dev-badge {
-    background: var(--accent-color);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 6px;
+    border-radius: 5px;
+    font-family: monospace;
     font-size: 12px;
-    margin-left: 5px;
+    z-index: 10000;
 }
+`;
 
-.subtitle {
-    color: var(--text-secondary);
-    font-size: 14px;
-    margin-top: 5px;
-}
-
-.main-nav {
-    display: flex;
-    gap: 20px;
-}
-
-.main-nav a {
-    color: var(--text-secondary);
-    text-decoration: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    font-weight: 500;
-}
-
-.main-nav a:hover {
-    background: var(--card-bg);
-    color: var(--text-primary);
-}
-
-.theme-btn {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.theme-btn:hover {
-    background: var(--accent-color);
-    transform: scale(1.05);
-}
-
-/* Navegação Global */
-.global-nav-section {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 40px;
-}
-
-.nav-container h3 {
-    margin-bottom: 20px;
-    color: var(--text-primary);
-    font-size: 18px;
-}
-
-.project-links {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 25px;
-}
-
-.link-group h4 {
-    color: var(--text-secondary);
-    font-size: 14px;
-    margin-bottom: 15px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.project-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: var(--secondary-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    text-decoration: none;
-    color: var(--text-primary);
-    transition: all 0.3s ease;
-    margin-bottom: 8px;
-}
-
-.project-link:hover {
-    transform: translateX(5px);
-    border-color: var(--accent-color);
-}
-
-.link-icon {
-    font-size: 18px;
-}
-
-.link-text {
-    flex: 1;
-    font-weight: 500;
-}
-
-.link-badge {
-    background: var(--accent-color);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 10px;
-    font-weight: 600;
-}
-
-.project-link.internal {
-    background: transparent;
-    border: 1px dashed var(--border-color);
-}
-
-/* Conteúdo Principal */
-.content-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 40px;
-}
-
-/* Seções */
-.dev-section {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 30px;
-}
-
-.section-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.section-header h2 {
-    font-family: 'Libre Baskerville', serif;
-    font-size: 24px;
-    margin-bottom: 8px;
-}
-
-.section-subtitle {
-    color: var(--text-secondary);
-    font-size: 14px;
-}
-
-/* História */
-.story-content {
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.story-block {
-    margin-bottom: 25px;
-    text-align: center;
-}
-
-.story-block p {
-    font-size: 16px;
-    line-height: 1.8;
-}
-
-.story-block.highlight {
-    background: linear-gradient(135deg, #7c3aed20, #4f46e520);
-    padding: 20px;
-    border-radius: 8px;
-    border-left: 4px solid var(--accent-color);
-}
-
-.story-block.principles {
-    text-align: left;
-    background: var(--secondary-bg);
-    padding: 20px;
-    border-radius: 8px;
-}
-
-/* Perfil Elliot */
-.elliot-profile {
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    margin-bottom: 30px;
-}
-
-.elliot-avatar {
-    flex-shrink: 0;
-}
-
-.avatar-placeholder {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    font-weight: bold;
-    color: white;
-}
-
-.elliot-description {
-    flex: 1;
-}
-
-.elliot-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.stat {
-    background: var(--secondary-bg);
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-}
-
-.stat-label {
-    display: block;
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-bottom: 5px;
-}
-
-.stat-value {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--accent-color);
-}
-
-/* Manifesto */
-.elliot-manifesto {
-    background: var(--secondary-bg);
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-}
-
-.elliot-manifesto h3 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-family: 'Libre Baskerville', serif;
-}
-
-.manifesto-points {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-.point {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: var(--primary-bg);
-    border-radius: 8px;
-}
-
-.point-icon {
-    font-size: 20px;
-}
-
-/* Laboratório */
-.lab-features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-}
-
-.lab-card {
-    background: var(--secondary-bg);
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    position: relative;
-}
-
-.lab-card h3 {
-    margin-bottom: 10px;
-    font-size: 16px;
-}
-
-.lab-card p {
-    color: var(--text-secondary);
-    font-size: 14px;
-    margin-bottom: 15px;
-}
-
-.lab-status {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.lab-status.testing {
-    background: var(--warning-color);
-    color: black;
-}
-
-.lab-status.developing {
-    background: var(--accent-color);
-    color: white;
-}
-
-.lab-status.planned {
-    background: var(--text-secondary);
-    color: white;
-}
-
-/* Timeline */
-.timeline {
-    position: relative;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 30px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--border-color);
-}
-
-.timeline-item {
-    display: flex;
-    margin-bottom: 30px;
-    position: relative;
-}
-
-.timeline-date {
-    width: 120px;
-    padding: 8px 12px;
-    background: var(--accent-color);
-    color: white;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    text-align: center;
-    margin-right: 20px;
-    flex-shrink: 0;
-}
-
-.timeline-content {
-    flex: 1;
-    background: var(--secondary-bg);
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-}
-
-.timeline-item.current .timeline-date {
-    background: var(--success-color);
-}
-
-/* Painel de Desenvolvimento */
-.dev-panel {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 20px;
-    position: sticky;
-    top: 20px;
-}
-
-.dev-panel h3 {
-    margin-bottom: 20px;
-    text-align: center;
-    font-size: 16px;
-}
-
-.dev-controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 25px;
-}
-
-.dev-btn {
-    background: var(--secondary-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: all 0.3s ease;
-}
-
-.dev-btn:hover {
-    background: var(--accent-color);
-    transform: scale(1.05);
-}
-
-.system-stats {
-    margin-bottom: 25px;
-}
-
-.system-stats h4 {
-    margin-bottom: 15px;
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.stat-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-    font-size: 13px;
-}
-
-.quick-actions {
-    margin-bottom: 25px;
-}
-
-.quick-actions h4 {
-    margin-bottom: 15px;
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.action-btn {
-    width: 100%;
-    background: var(--secondary-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-bottom: 8px;
-    transition: all 0.3s ease;
-    text-align: left;
-}
-
-.action-btn:hover {
-    background: var(--accent-color);
-    transform: translateX(5px);
-}
-
-.quick-nav {
-    border-top: 1px solid var(--border-color);
-    padding-top: 20px;
-}
-
-.quick-nav h4 {
-    margin-bottom: 15px;
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.nav-quick-link {
-    display: block;
-    padding: 10px 12px;
-    background: var(--secondary-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-    text-decoration: none;
-    margin-bottom: 8px;
-    transition: all 0.3s ease;
-    font-size: 13px;
-}
-
-.nav-quick-link:hover {
-    background: var(--accent-color);
-    transform: translateX(5px);
-}
-
-/* Footer */
-footer {
-    margin-top: 50px;
-    border-top: 1px solid var(--border-color);
-    padding-top: 30px;
-}
-
-.dev-footer {
-    text-align: center;
-}
-
-.dev-footer p {
-    margin-bottom: 15px;
-    color: var(--text-secondary);
-}
-
-.dev-links {
-    margin-bottom: 25px;
-}
-
-.dev-links a {
-    color: var(--text-secondary);
-    text-decoration: none;
-    margin: 0 10px;
-    transition: all 0.3s ease;
-}
-
-.dev-links a:hover {
-    color: var(--accent-color);
-}
-
-.global-footer-links {
-    margin-top: 30px;
-}
-
-.global-footer-links h4 {
-    margin-bottom: 15px;
-    color: var(--text-secondary);
-    font-size: 14px;
-}
-
-.footer-project-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 10px;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.footer-project-grid a {
-    display: block;
-    padding: 8px 12px;
-    background: var(--secondary-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-    text-decoration: none;
-    font-size: 13px;
-    transition: all 0.3s ease;
-    text-align: center;
-}
-
-.footer-project-grid a:hover {
-    background: var(--accent-color);
-    transform: scale(1.05);
-}
-
-/* Botão Voltar ao Topo */
-.top-btn {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 20px;
-    transition: all 0.3s ease;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-}
-
-.top-btn.show {
-    opacity: 1;
-    visibility: visible;
-}
-
-.top-btn:hover {
-    background: var(--accent-hover);
-    transform: scale(1.1);
-}
-
-/* 💬 BOTÃO FLUTUANTE DO DIÁLOGO */
-.dialogue-floating-btn {
-    position: fixed;
-    bottom: 30px;
-    left: 30px;
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 50px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.3);
-    z-index: 999;
-    transition: all 0.3s ease;
-    border: none;
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-}
-
-.dialogue-floating-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(124, 58, 237, 0.4);
-}
-
-.dialogue-btn-icon {
-    font-size: 20px;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-.dialogue-btn-text {
-    font-size: 14px;
-}
-
-/* 🪟 POPUP DE DIÁLOGO */
-.dialogue-popup {
-    position: fixed;
-    top: 50%;
-    left: -100%;
-    transform: translateY(-50%);
-    width: 400px;
-    height: 600px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    z-index: 1001;
-    display: flex;
-    flex-direction: column;
-    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-}
-
-.dialogue-popup.open {
-    left: 30px;
-}
-
-.dialogue-header {
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
-    color: white;
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.dialogue-title {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.elliot-avatar-small {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 16px;
-    backdrop-filter: blur(10px);
-}
-
-.dialogue-title h3 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.dialogue-status {
-    font-size: 12px;
-    opacity: 0.9;
-    margin-top: 2px;
-}
-
-.close-dialogue {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-}
-
-.close-dialogue:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
-}
-
-/* MENSAGENS */
-.dialogue-messages {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
-    background: var(--primary-bg);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.message {
-    display: flex;
-    gap: 12px;
-    max-width: 100%;
-}
-
-.message.user {
-    flex-direction: row-reverse;
-}
-
-.message-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 12px;
-    flex-shrink: 0;
-    margin-top: 4px;
-}
-
-.message.user .message-avatar {
-    background: var(--accent-color);
-    color: white;
-}
-
-.message.elliot .message-avatar {
-    background: var(--success-color);
-    color: white;
-}
-
-.message-content {
-    background: var(--secondary-bg);
-    padding: 12px 16px;
-    border-radius: 18px;
-    max-width: 280px;
-    border: 1px solid var(--border-color);
-    position: relative;
-}
-
-.message.user .message-content {
-    background: var(--accent-color);
-    color: white;
-    border-color: var(--accent-color);
-}
-
-.message-content p {
-    margin: 0;
-    line-height: 1.4;
-    font-size: 14px;
-}
-
-.message-time {
-    font-size: 10px;
-    opacity: 0.6;
-    margin-top: 4px;
-    display: block;
-}
-
-/* ÁREA DE INPUT */
-.dialogue-input-area {
-    padding: 20px;
-    background: var(--card-bg);
-    border-top: 1px solid var(--border-color);
-}
-
-.input-wrapper {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.dialogue-input {
-    flex: 1;
-    padding: 12px 16px;
-    background: var(--secondary-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 25px;
-    color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    transition: all 0.3s ease;
-}
-
-.dialogue-input:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
-}
-
-.dialogue-submit {
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    padding: 12px 16px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    white-space: nowrap;
-}
-
-.dialogue-submit:hover {
-    background: var(--accent-hover);
-    transform: scale(1.05);
-}
-
-.dialogue-submit:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.dialogue-hint {
-    font-size: 11px;
-    color: var(--text-secondary);
-    text-align: center;
-    line-height: 1.4;
-}
-
-/* OVERLAY */
-.dialogue-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(2px);
-}
-
-.dialogue-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* ANIMAÇÕES DE MENSAGEM */
-@keyframes messageSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.message {
-    animation: messageSlideIn 0.3s ease;
-}
-
-/* SCROLLBAR PERSONALIZADA */
-.dialogue-messages::-webkit-scrollbar {
-    width: 6px;
-}
-
-.dialogue-messages::-webkit-scrollbar-track {
-    background: var(--secondary-bg);
-    border-radius: 3px;
-}
-
-.dialogue-messages::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 3px;
-}
-
-.dialogue-messages::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-color);
-}
-
-/* EFEITO DE DIGITAÇÃO */
-.typing-indicator {
-    display: flex;
-    gap: 4px;
-    padding: 12px 16px;
-    background: var(--secondary-bg);
-    border-radius: 18px;
-    border: 1px solid var(--border-color);
-    align-items: center;
-    max-width: fit-content;
-}
-
-.typing-dot {
-    width: 6px;
-    height: 6px;
-    background: var(--text-secondary);
-    border-radius: 50%;
-    animation: typingBounce 1.4s infinite ease-in-out;
-}
-
-.typing-dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-dot:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes typingBounce {
-    0%, 80%, 100% { transform: scale(0.8); }
-    40% { transform: scale(1); }
-}
-
-/* RESPONSIVIDADE */
-@media (max-width: 768px) {
-    .content-wrapper {
-        grid-template-columns: 1fr;
-    }
-    
-    header {
-        flex-direction: column;
-        gap: 20px;
-        text-align: center;
-    }
-    
-    .main-nav {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    
-    .elliot-profile {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .project-links {
-        grid-template-columns: 1fr;
-    }
-    
-    .dev-controls {
-        grid-template-columns: 1fr;
-    }
-    
-    .footer-project-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .dialogue-popup {
-        width: calc(100vw - 40px);
-        height: 70vh;
-        left: -100vw;
-    }
-    
-    .dialogue-popup.open {
-        left: 20px;
-    }
-    
-    .dialogue-floating-btn {
-        bottom: 20px;
-        left: 20px;
-        padding: 12px 16px;
-    }
-    
-    .dialogue-btn-text {
-        display: none;
-    }
-    
-    .message-content {
-        max-width: 220px;
-    }
-}
+const styleSheet = document.createElement('style');
+styleSheet.innerText = debugStyles;
+document.head.appendChild(styleSheet);
