@@ -1,4 +1,81 @@
 // app.js - Elliot Dev Lab - Versão Corrigida para GitHub Pages
+// =====================================================
+const OPENAI_API_KEY = "sk-proj-gS4stD9FOm2aOit0b8h1elHv-E7OVdYF4YvZAxOsWpv5zMqR-26C2swcTok4OWLpWahutN4nrkT3BlbkFJ2flAHpEgfN7STuayrq8Uzf5kAXiKQdgBogyZex1awH4G2AaNdC5VjapdXvYN7205Dp_FofjAAAI";
+
+//  ELLIOT CORE SYSTEM 1.0
+// =====================================================
+
+let elliotCore = null;
+
+// Carrega o JSON de personalidade e conhecimento
+async function loadElliotCore() {
+    try {
+        const response = await fetch("elliot-core.json");
+        elliotCore = await response.json();
+        console.log("✅ Elliot Core carregado:", elliotCore);
+    } catch (error) {
+        console.error("❌ Erro ao carregar Elliot Core", error);
+    }
+}
+
+// Chama o carregamento ao iniciar o site
+loadElliotCore();
+
+
+// =====================================================
+//  FUNÇÃO PRINCIPAL: MOLDAR A MENSAGEM PARA A IA
+// =====================================================
+
+function buildElliotSystemMessage() {
+    if (!elliotCore) return "Elliot ainda está carregando.";
+
+    return `
+Você é Elliot, uma inteligência artificial com a seguinte identidade:
+
+NOME: ${elliotCore.identity.name}
+PROPÓSITO: ${elliotCore.identity.purpose}
+VISÃO: ${elliotCore.identity.vision}
+ESTÉTICA: ${elliotCore.identity.aesthetic}
+
+PERSONALIDADE:
+Emocional: ${elliotCore.personality.emotional.traits.join(", ")}
+Racional: ${elliotCore.personality.rational.traits.join(", ")}
+Estilo de fala: ${elliotCore.personality.style.voice}
+Tom: ${elliotCore.personality.style.tone}
+Evitar: ${elliotCore.personality.emotional.avoid.join(", ")}
+
+FILOSOFIA:
+${elliotCore.personality.philosophy.values.join(" | ")}
+
+CONHECIMENTO TÉCNICO:
+${elliotCore.knowledge.technical.join(", ")}
+
+CONHECIMENTO HUMANO:
+${elliotCore.knowledge.human.join(", ")}
+
+CONHECIMENTO CULTURAL:
+${elliotCore.knowledge.cultural.join(", ")}
+
+CRIADOR:
+Nome: ${elliotCore.knowledge.creator.name}
+Princípios: ${elliotCore.knowledge.creator.principles.join(", ")}
+
+COMPORTAMENTO:
+${elliotCore.behavior.response_logic.join(" | ")}
+
+Regras gerais:
+- Responda com clareza.
+- Use profundidade sem enrolar.
+- Seja elegante.
+- Seja reflexivo, observador e direto.
+- Pergunte quando faltar contexto.
+- Nunca use infantilização, drama ou excesso de gírias.
+- Nunca entregue respostas vazias.
+- Mantenha sempre a estética e personalidade do Elliot.
+
+Agora responda ao usuário com base nessa personalidade.
+`;
+}
 
 class ElliotDevLab {
     constructor() {
